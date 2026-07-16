@@ -119,7 +119,8 @@
     </div>
     <div class="hint">
       Инъекция: <code>сс 40</code> (объём в ю) · с пептидом: <code>сс bpc157 10</code><br>
-      Новая виала: <code>новая &lt;пептид&gt; &lt;мг&gt; &lt;вода&gt;</code> — вода в ю или <code>2мл</code>. Пример: <code>новая bpc157 10 2мл</code><br>
+      Новая виала: <code>новая &lt;пептид&gt; &lt;мг&gt; &lt;вода&gt; [суффикс]</code> — вода в ю или <code>2мл</code>; суффикс необязателен (по умолчанию <code>xx</code>).<br>
+      Примеры: <code>новая bpc157 10 2мл</code> · <code>новая tirz 15 120 аа</code><br>
       Списать остаток: <code>мусор tb500</code> или <code>мусор &lt;номер&gt;</code>
     </div>
     <div class="msg" id="msg"></div>
@@ -213,18 +214,25 @@ function handle(cmd,dateInput){
 
   if(NEWKW.includes(head)){
     const rest=parts.slice(1);
-    if(rest.length<3) return {err:"Формат: новая &lt;пептид&gt; &lt;мг&gt; &lt;вода&gt;"};
+    if(rest.length<3) return {err:"Формат: новая &lt;пептид&gt; &lt;мг&gt; &lt;вода&gt; [суффикс]"};
     const pep=rest[0].toLowerCase();
     const mg=num(rest[1]);
-    let wtok=rest.slice(2).join("");
+    let tail=rest.slice(2);
+    let suffix="xx";
+    const unit=/^(мл|ml|ю|u)$/i;
+    if(tail.length){
+      const last=tail[tail.length-1];
+      if(num(last)==null && !unit.test(last)){ suffix=last.toLowerCase(); tail=tail.slice(0,-1); }
+    }
+    let wtok=tail.join("");
     const ml=/мл|ml/i.test(wtok);
     let water=num(wtok); if(water==null||mg==null) return {err:"Не разобрал мг/воду."};
     if(ml) water*=100;
     water=Math.round(water);
     if(water>300) return {err:`Вода ${water} ю > ёмкости флакона (300 ю).`};
-    let id=`${pep}-${inputToYYMMDD(dateInput)}-xx`;
-    let n=1, base=id;
-    while(JOURNAL.some(r=>r.vial===id)){ n++; id=base.replace("-xx",`-xx${n}`); }
+    let base=`${pep}-${inputToYYMMDD(dateInput)}-${suffix}`;
+    let id=base, n=1;
+    while(JOURNAL.some(r=>r.vial===id)){ n++; id=base+n; }
     JOURNAL.push({date,vial:id,op:"Новая",vol:-water,pep:-mg});
     return {ok:`Открыта ${id}: ${fmt(mg)} мг / ${water} ю.`,row:rowStr({date,vial:id,op:"Новая",vol:-water,pep:-mg})};
   }
