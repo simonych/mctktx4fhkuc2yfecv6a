@@ -1,0 +1,171 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#eef1f5; --surface:#ffffff; --ink:#16202e; --muted:#6b7684;
+    --line:#dde3ea; --line2:#eef2f6; --accent:#0e7c86; --accent-soft:#e2f2f3;
+    --warn:#c0392b; --warn-soft:#fbe9e7;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;
+    line-height:1.5;padding:20px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+  header h1{font-size:16px;font-weight:600;margin:0}
+  header .sub{color:var(--muted);font-size:12px;margin-top:2px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .card h2{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+  label{display:block;font-size:12px;color:var(--muted);margin:0 0 4px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .field{flex:1;min-width:130px;margin-bottom:10px}
+  input[type=text]{width:100%;font-family:var(--mono);font-size:14px;padding:9px 11px;
+    border:1px solid var(--line);border-radius:7px;background:#fbfcfd;color:var(--ink)}
+  input:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+  button{font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--accent);
+    background:var(--accent);color:#fff;padding:10px 16px;border-radius:7px}
+  button:hover{filter:brightness(1.06)}
+  button.ghost{background:var(--surface);color:var(--ink);border-color:var(--line)}
+  button.ghost:hover{background:var(--line2);filter:none}
+  .result{display:none}
+  .result.show{display:block}
+  .big{font-family:var(--mono);font-size:34px;font-weight:600;letter-spacing:-.01em}
+  .big small{font-size:15px;color:var(--muted);font-weight:500;margin-left:8px}
+  .cmd{margin-top:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .cmd code{font-family:var(--mono);font-size:13px;background:var(--accent-soft);color:#0b5a62;
+    padding:6px 10px;border-radius:6px}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px}
+  th{text-align:right;font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;
+    letter-spacing:.04em;padding:0 10px 7px;border-bottom:1px solid var(--line)}
+  th:first-child{text-align:left}
+  td{padding:7px 10px;border-bottom:1px solid var(--line2);font-family:var(--mono);text-align:right;
+    font-variant-numeric:tabular-nums}
+  td:first-child{text-align:left}
+  tr:last-child td{border-bottom:none}
+  tr.rec td{background:var(--accent-soft);font-weight:600}
+  .tag{font-family:var(--mono);font-size:10px;color:#0b5a62;background:#cdeaec;padding:1px 6px;border-radius:4px;margin-left:6px}
+  .err{color:var(--warn);background:var(--warn-soft);padding:9px 11px;border-radius:7px;font-size:13px;display:none}
+  .err.show{display:block}
+  .note{color:var(--muted);font-size:12px;margin-top:10px;line-height:1.6}
+  .doses{list-style:none;padding:0;margin:8px 0 0;font-family:var(--mono);font-size:13px}
+  .doses li{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line2)}
+  .doses li:last-child{border-bottom:none}
+  @media(max-width:520px){ body{padding:12px} .big{font-size:28px} }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Калькулятор воды</h1>
+    <div class="sub">сколько бактериостатической воды добавить в виалу</div>
+  </header>
+
+  <div class="card">
+    <h2>Виала</h2>
+    <div class="row">
+      <div class="field" style="flex:0 0 130px">
+        <label>Пептид (необяз.)</label>
+        <input type="text" id="pep" placeholder="tirz" autocomplete="off">
+      </div>
+      <div class="field" style="flex:0 0 130px">
+        <label>Вес пептида, мг</label>
+        <input type="text" id="mg" placeholder="15" inputmode="decimal" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Дозы, мг (через запятую)</label>
+        <input type="text" id="doses" placeholder="2,5  5" autocomplete="off">
+      </div>
+    </div>
+    <button id="go">Рассчитать</button>
+    <div class="err" id="err"></div>
+  </div>
+
+  <div class="card result" id="result">
+    <h2>Рекомендация</h2>
+    <div class="big" id="recV"></div>
+    <div class="cmd" id="cmdWrap"></div>
+    <ul class="doses" id="doseList"></ul>
+    <div class="note" id="recNote"></div>
+  </div>
+
+  <div class="card result" id="opts">
+    <h2>Варианты</h2>
+    <div id="optsTable"></div>
+    <div class="note">Вода ограничена ёмкостью флакона — 300 ю (3 мл). Концентрация в подсказках не показывается (нужна только для расчёта).</div>
+  </div>
+</div>
+
+<script>
+function num(s){ let v=parseFloat(String(s).replace(",",".").replace(/[^0-9.\-]/g,"")); return isNaN(v)?null:v; }
+function fmt(n){ let s=(Math.round(n*10000)/10000).toString(); return s.replace(".",","); }
+function fmtV(V){ return (Math.abs(V-Math.round(V))<1e-6) ? String(Math.round(V)) : (Math.round(V*10)/10).toString().replace(".",","); }
+
+function calc(T, doses){
+  if(!(T>0)) return {error:"Укажи вес пептида (мг)."};
+  if(doses.length===0) return {error:"Укажи хотя бы одну дозу (мг)."};
+  if(doses.some(d=>!(d>0))) return {error:"Дозы должны быть положительными числами."};
+  if(doses.some(d=>d>T)) return {error:"Доза не может быть больше всего пептида в виале ("+fmt(T)+" мг)."};
+  const dmax=Math.max.apply(null,doses);
+  const mult10=v=>Math.abs(v/10-Math.round(v/10))<1e-6;
+  const cands=[];
+  for(let vmax=10; vmax*T/dmax<=300+1e-9; vmax+=10){
+    const V=vmax*T/dmax;
+    const vols=doses.map(d=>d*vmax/dmax);
+    if(vols.every(mult10)) cands.push({vmax,V,vols:vols.map(v=>Math.round(v))});
+  }
+  if(cands.length===0) return {error:"Нет варианта с кратностью 10 ю в пределах флакона (≤300 ю). Попробуй округлить дозы."};
+  let rec=cands.find(c=>c.vmax>=40) || cands[cands.length-1];
+  return {cands,rec,doses,T};
+}
+
+function copyText(text){
+  try{ const ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.top="-1000px";
+    document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+  }catch(e){}
+  try{ if(navigator.clipboard) navigator.clipboard.writeText(text).catch(()=>{}); }catch(e){}
+}
+
+function run(){
+  const err=document.getElementById("err");
+  const T=num(document.getElementById("mg").value);
+  const doses=document.getElementById("doses").value.split(/[,;\s]+/).map(num).filter(x=>x!=null);
+  const pep=document.getElementById("pep").value.trim();
+  const r=calc(T,doses);
+  if(r.error){ err.textContent=r.error; err.classList.add("show");
+    document.getElementById("result").classList.remove("show");
+    document.getElementById("opts").classList.remove("show"); return; }
+  err.classList.remove("show");
+
+  // recommendation
+  document.getElementById("recV").innerHTML = fmtV(r.rec.V)+" ю <small>= "+fmt(r.rec.V/100)+" мл воды</small>";
+  const cmd="новая "+(pep||"<пептид>")+" "+fmt(T)+" "+fmtV(r.rec.V);
+  const w=document.getElementById("cmdWrap");
+  w.innerHTML='<span style="font-size:12px;color:var(--muted)">команда для трекера:</span> <code>'+cmd+'</code> <button class="ghost" id="cp" style="padding:4px 10px;font-size:12px">копировать</button>';
+  document.getElementById("cp").onclick=function(){ copyText(cmd); this.textContent="✓"; };
+
+  const dl=document.getElementById("doseList");
+  dl.innerHTML = r.doses.map((d,i)=>`<li><span>доза ${fmt(d)} мг</span><span>${r.rec.vols[i]} ю</span></li>`).join("");
+
+  const outRange = r.rec.vmax>=40 && r.rec.vmax<=50;
+  document.getElementById("recNote").textContent = outRange
+    ? "Самая большая инъекция — "+r.rec.vmax+" ю, в целевом диапазоне 40–50, при минимуме воды."
+    : (r.rec.vmax>50
+        ? "В 40–50 при кратности 10 не уложиться — самая большая увеличена до "+r.rec.vmax+" ю."
+        : "Ёмкость флакона не даёт довести до 40–50 — взят максимум, что помещается: самая большая "+r.rec.vmax+" ю.");
+  document.getElementById("result").classList.add("show");
+
+  // options
+  let h='<table><thead><tr><th>Вода, ю</th><th>Вода, мл</th>'+
+    r.doses.map(d=>`<th>${fmt(d)} мг</th>`).join("")+'</tr></thead><tbody>';
+  r.cands.forEach(c=>{
+    const isRec=c===r.rec;
+    h+=`<tr class="${isRec?'rec':''}"><td>${fmtV(c.V)}${isRec?'<span class="tag">реком.</span>':''}</td>`+
+       `<td>${fmt(c.V/100)}</td>`+ c.vols.map(v=>`<td>${v} ю</td>`).join("") + `</tr>`;
+  });
+  document.getElementById("optsTable").innerHTML=h+'</tbody></table>';
+  document.getElementById("opts").classList.add("show");
+}
+
+document.getElementById("go").onclick=run;
+["mg","doses","pep"].forEach(id=>document.getElementById(id).addEventListener("keydown",e=>{ if(e.key==="Enter") run(); }));
+</script>

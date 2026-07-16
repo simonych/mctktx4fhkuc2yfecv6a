@@ -1,0 +1,428 @@
+<meta charset="utf-8">
+<style>
+  :root{
+    --bg:#eef1f5; --surface:#ffffff; --ink:#16202e; --muted:#6b7684;
+    --line:#dde3ea; --line2:#eef2f6; --accent:#0e7c86; --accent-soft:#e2f2f3;
+    --warn:#c0392b; --warn-soft:#fbe9e7; --ok:#1f8a4c;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Mono",Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:14px;line-height:1.5;padding:20px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  h1{font-size:16px;font-weight:600;letter-spacing:.01em;margin:0}
+  h1 .tag{font-family:var(--mono);font-size:11px;color:var(--accent);
+    background:var(--accent-soft);padding:2px 7px;border-radius:5px;margin-left:8px;font-weight:600;
+    vertical-align:middle}
+  .sub{color:var(--muted);font-size:12px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .card h2{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 12px}
+  /* command bar */
+  .cmd{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .cmd input[type=text]{flex:1;min-width:180px;font-family:var(--mono);font-size:14px;
+    padding:9px 11px;border:1px solid var(--line);border-radius:7px;background:#fbfcfd;color:var(--ink)}
+  .cmd input[type=date]{font-family:var(--mono);font-size:13px;padding:8px 10px;
+    border:1px solid var(--line);border-radius:7px;background:#fbfcfd;color:var(--ink)}
+  .cmd input:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+  button{font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;
+    border:1px solid var(--line);background:var(--surface);color:var(--ink);
+    padding:9px 14px;border-radius:7px}
+  button:hover{background:var(--line2)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.primary:hover{filter:brightness(1.06)}
+  .hint{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:9px;line-height:1.7}
+  .hint code{background:var(--line2);padding:1px 5px;border-radius:4px;color:var(--ink)}
+  .msg{margin-top:10px;font-size:13px;padding:9px 11px;border-radius:7px;display:none}
+  .msg.show{display:block}
+  .msg.ok{background:var(--accent-soft);color:#0b5a62}
+  .msg.err{background:var(--warn-soft);color:var(--warn)}
+  .msg .row{font-family:var(--mono);font-size:12px;margin-top:5px;color:var(--ink);
+    background:#fff;border:1px dashed var(--line);padding:6px 8px;border-radius:5px;
+    display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .msg .row button{padding:3px 9px;font-size:11px}
+  /* tables */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;
+    letter-spacing:.05em;padding:0 10px 7px;border-bottom:1px solid var(--line)}
+  td{padding:8px 10px;border-bottom:1px solid var(--line2)}
+  tr:last-child td{border-bottom:none}
+  #remains,#stats,#journal{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .num{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+  .vial{font-family:var(--mono);font-size:12.5px}
+  .pepbadge{font-family:var(--mono);font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px;
+    background:var(--line2);color:var(--ink)}
+  .gauge{height:6px;border-radius:3px;background:var(--line2);overflow:hidden;min-width:70px}
+  .gauge > i{display:block;height:100%;background:var(--accent);border-radius:3px}
+  .userblock{margin-bottom:18px}
+  .userblock:last-child{margin-bottom:0}
+  .userblock .name{font-family:var(--mono);font-weight:700;font-size:13px;margin:0 0 8px;
+    display:inline-block;padding:2px 9px;background:var(--ink);color:#fff;border-radius:5px}
+  .empty{color:var(--muted);font-size:13px;padding:4px 0}
+  .del{color:var(--muted);cursor:pointer;border:none;background:none;font-size:15px;padding:2px 6px;border-radius:5px}
+  .del:hover{background:var(--warn-soft);color:var(--warn)}
+  .edit{color:var(--muted);cursor:pointer;border:none;background:none;font-size:13px;padding:2px 6px;border-radius:5px}
+  .edit:hover{background:var(--accent-soft);color:var(--accent)}
+  .rowbtns{display:flex;gap:2px;justify-content:flex-end}
+  td input.cell{width:100%;min-width:64px;font-family:var(--mono);font-size:12.5px;padding:4px 6px;
+    border:1px solid var(--line);border-radius:5px;background:#fbfcfd;color:var(--ink)}
+  td input.cell.n{text-align:right}
+  td input.cell:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+  button.mini{padding:3px 9px;font-size:12px}
+  .op-new{color:var(--accent);font-weight:600}
+  .op-trash{color:var(--muted)}
+  tr.overdraw td{background:var(--warn-soft)}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  details summary{cursor:pointer;font-size:11px;font-weight:700;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--muted);list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary:before{content:"▸ ";color:var(--accent)}
+  details[open] summary:before{content:"▾ "}
+  .flag{font-size:12px;color:var(--warn);margin-top:8px;display:none}
+  .flag.show{display:block}
+  @media(max-width:560px){
+    body{padding:12px}
+    .card{padding:13px}
+    .cmd input[type=date]{flex:1}
+    table{font-size:12px}
+    th,td{padding:7px 7px}
+    h1{font-size:15px}
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Учёт пептидов<span class="tag" id="hdrcount"></span></h1>
+    <span class="sub">данные хранятся в этом браузере</span>
+  </header>
+
+  <div class="card">
+    <h2>Новая запись</h2>
+    <div class="cmd">
+      <input type="date" id="date">
+      <input type="text" id="cmd" placeholder="сс 40   ·   сс bpc157 10   ·   новая tirz 15 120" autocomplete="off">
+      <button class="primary" id="add">Записать</button>
+    </div>
+    <div class="hint">
+      Инъекция: <code>сс 40</code> (объём в ю) · с пептидом: <code>сс bpc157 10</code><br>
+      Новая виала: <code>новая &lt;пептид&gt; &lt;мг&gt; &lt;вода&gt;</code> — вода в ю или <code>2мл</code>. Пример: <code>новая bpc157 10 2мл</code><br>
+      Списать остаток: <code>мусор tb500</code> или <code>мусор &lt;номер&gt;</code>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="card">
+    <h2>Открытые виалы</h2>
+    <div id="remains"></div>
+    <div class="flag" id="overflag"></div>
+  </div>
+
+  <div class="card">
+    <h2>Статистика инъекций</h2>
+    <div id="stats"></div>
+  </div>
+
+  <div class="card">
+    <details id="journalWrap" open>
+      <summary>Полный журнал</summary>
+      <div id="journal" style="margin-top:12px"></div>
+    </details>
+    <div class="toolbar" style="margin-top:14px">
+      <button id="export">Экспорт (бэкап)</button>
+      <button id="import">Импорт</button>
+      <button id="copy">Копировать TSV</button>
+      <button id="reset">Очистить всё</button>
+      <input type="file" id="importfile" accept=".json,application/json" style="display:none">
+    </div>
+    <textarea id="tsvout" readonly style="display:none;width:100%;margin-top:12px;height:130px;
+      font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border-radius:7px;
+      padding:8px;background:#fbfcfd;color:var(--ink);white-space:pre;resize:vertical"></textarea>
+    <div id="tsvhint" style="display:none;font-size:12px;color:var(--muted);margin-top:6px"></div>
+  </div>
+</div>
+
+<script>
+const SEED = [];
+
+const NEWKW=["новая","открыл","начал","new"];
+const TRASHKW=["мусор","списал","выбросил","trash"];
+
+let JOURNAL=[];
+let EDITING=null;
+
+/* ---------- storage ---------- */
+async function load(){
+  // 1) хранилище артефакта Claude, если доступно
+  try{ if(window.storage){ const r=await window.storage.get("journal"); if(r&&r.value) return JSON.parse(r.value); } }catch(e){}
+  // 2) localStorage — работает в обычном браузере (в т.ч. на телефоне, офлайн)
+  try{ const v=localStorage.getItem("vialJournal"); if(v) return JSON.parse(v); }catch(e){}
+  return null;
+}
+async function save(){
+  const s=JSON.stringify(JOURNAL);
+  try{ if(window.storage) await window.storage.set("journal",s); }catch(e){}
+  try{ localStorage.setItem("vialJournal",s); }catch(e){}
+}
+
+/* ---------- helpers ---------- */
+function fmt(n){ if(n==null||isNaN(n)) return ""; let s=(Math.round(n*10000)/10000).toString(); return s.replace(".",","); }
+function num(s){ let v=parseFloat(String(s).replace(",",".").replace(/[^0-9.\-]/g,"")); return isNaN(v)?null:v; }
+function key(d){ const p=d.split("."); return p[2]+p[1].padStart(2,"0")+p[0].padStart(2,"0"); }
+function pcode(v){ return v.split("-")[0]; }
+function todayInput(){ const d=new Date(); return d.toISOString().slice(0,10); }
+function inputToDate(s){ const p=s.split("-"); return `${p[2]}.${p[1]}.${p[0]}`; }
+function inputToYYMMDD(s){ const p=s.split("-"); return p[0].slice(2)+p[1]+p[2]; }
+
+function vialState(v){
+  const rows=JOURNAL.filter(r=>r.vial===v);
+  const nw=rows.find(r=>r.op==="Новая");
+  const C = nw ? Math.abs(nw.pep)/Math.abs(nw.vol) : 0;
+  const initVol = nw ? Math.abs(nw.vol) : 0;
+  let sv=0,sp=0; rows.forEach(r=>{sv+=r.vol;sp+=r.pep;});
+  const status = sv===0?"closed": (sv<0?"open":"over");
+  return {vial:v,C,initVol,availVol:-sv,availPep:-sp,status,opened:nw?nw.date:"",code:pcode(v)};
+}
+function allVials(){
+  const seen=[]; JOURNAL.forEach(r=>{ if(!seen.includes(r.vial)) seen.push(r.vial); });
+  return seen.map(vialState);
+}
+function openVials(){ return allVials().filter(v=>v.status==="open").sort((a,b)=>key(a.opened)-key(b.opened)); }
+function users(){ const u=[]; JOURNAL.forEach(r=>{ if(!NEWKW.includes(r.op.toLowerCase())&&!TRASHKW.includes(r.op.toLowerCase())&&r.op!=="Новая"&&r.op!=="Мусор"&&!u.includes(r.op)) u.push(r.op); }); return u; }
+
+/* ---------- parser ---------- */
+function handle(cmd,dateInput){
+  const date=inputToDate(dateInput);
+  const t=cmd.trim().replace(/\s+/g," ");
+  if(!t) return {err:"Пустая команда."};
+  const parts=t.split(" ");
+  const head=parts[0].toLowerCase();
+
+  if(NEWKW.includes(head)){
+    const rest=parts.slice(1);
+    if(rest.length<3) return {err:"Формат: новая &lt;пептид&gt; &lt;мг&gt; &lt;вода&gt;"};
+    const pep=rest[0].toLowerCase();
+    const mg=num(rest[1]);
+    let wtok=rest.slice(2).join("");
+    const ml=/мл|ml/i.test(wtok);
+    let water=num(wtok); if(water==null||mg==null) return {err:"Не разобрал мг/воду."};
+    if(ml) water*=100;
+    water=Math.round(water);
+    if(water>300) return {err:`Вода ${water} ю > ёмкости флакона (300 ю).`};
+    let id=`${pep}-${inputToYYMMDD(dateInput)}-xx`;
+    let n=1, base=id;
+    while(JOURNAL.some(r=>r.vial===id)){ n++; id=base.replace("-xx",`-xx${n}`); }
+    JOURNAL.push({date,vial:id,op:"Новая",vol:-water,pep:-mg});
+    return {ok:`Открыта ${id}: ${fmt(mg)} мг / ${water} ю.`,row:rowStr({date,vial:id,op:"Новая",vol:-water,pep:-mg})};
+  }
+
+  if(TRASHKW.includes(head)){
+    const arg=(parts[1]||"").toLowerCase();
+    if(!arg) return {err:"Укажи виалу: мусор &lt;пептид или номер&gt;."};
+    const cand=openVials().filter(v=>v.vial===arg||v.code===arg);
+    if(cand.length===0) return {err:`Открытой виалы «${arg}» нет.`};
+    if(cand.length>1) return {err:`Несколько открытых «${arg}» — укажи полный номер.`};
+    const v=cand[0];
+    JOURNAL.push({date,vial:v.vial,op:"Мусор",vol:v.availVol,pep:round(v.availPep)});
+    return {ok:`Списан остаток ${v.vial}: ${v.availVol} ю / ${fmt(v.availPep)} мг. Виала закрыта.`,
+      row:rowStr({date,vial:v.vial,op:"Мусор",vol:v.availVol,pep:round(v.availPep)})};
+  }
+
+  // injection: <init> [pep] <vol>
+  const init=parts[0];
+  let pep=null, volTok=null;
+  if(parts.length===2){ volTok=parts[1]; }
+  else if(parts.length>=3){ pep=parts[1].toLowerCase(); volTok=parts[2]; }
+  else return {err:"Формат инъекции: &lt;инициалы&gt; [пептид] &lt;объём&gt;."};
+  const vol=Math.round(num(volTok));
+  if(vol==null||isNaN(vol)||vol<=0) return {err:"Не разобрал объём (в ю)."};
+
+  let cand=openVials();
+  if(pep) cand=cand.filter(v=>v.code===pep);
+  if(cand.length===0) return {err: pep?`Открытой виалы «${pep}» нет.`:"Нет открытых виал."};
+  const codes=[...new Set(cand.map(v=>v.code))];
+  if(!pep && codes.length>1) return {err:`Открыто несколько пептидов (${codes.join(", ")}) — укажи пептид: «${init} ${codes[0]} ${vol}».`};
+  const fit=cand.filter(v=>v.availVol>=vol);
+  if(fit.length===0) return {err:`Не хватает объёма: в открытых ${cand.map(v=>v.availVol+" ю").join(", ")}, нужно ${vol} ю.`};
+  const v=fit[0]; // FIFO oldest
+  const mg=round(vol*v.C);
+  JOURNAL.push({date,vial:v.vial,op:init,vol,pep:mg});
+  const st=vialState(v.vial);
+  const tail = st.status==="closed" ? " — виала опустела." : ` — остаток ${st.availVol} ю / ${fmt(st.availPep)} мг.`;
+  return {ok:`${init}: ${vol} ю = ${fmt(mg)} мг из ${v.vial}${tail}`,
+    row:rowStr({date,vial:v.vial,op:init,vol,pep:mg})};
+}
+function round(n){ return Math.round(n*10000)/10000; }
+function rowStr(r){ return `${r.date}\t${r.vial}\t${r.op}\t${r.vol}\t\t${fmt(r.pep)}`; }
+
+/* ---------- render ---------- */
+function render(){
+  const vs=allVials();
+  document.getElementById("hdrcount").textContent = openVials().length+" откр.";
+
+  // remainders
+  const open=openVials();
+  const rem=document.getElementById("remains");
+  if(open.length===0){ rem.innerHTML='<div class="empty">Открытых виал нет — откройте новую.</div>'; }
+  else{
+    let h='<table><thead><tr><th>Виала</th><th class="num">Остаток, ю</th><th class="num">Остаток, мг</th><th style="width:110px">Заполнение</th></tr></thead><tbody>';
+    open.forEach(v=>{
+      const pct=v.initVol?Math.max(0,Math.min(100,100*v.availVol/v.initVol)):0;
+      h+=`<tr><td class="vial">${v.vial}</td><td class="num">${v.availVol}</td><td class="num">${fmt(v.availPep)}</td>`+
+         `<td><div class="gauge"><i style="width:${pct}%"></i></div></td></tr>`;
+    });
+    rem.innerHTML=h+'</tbody></table>';
+  }
+  // overdraw flag
+  const over=vs.filter(v=>v.status==="over");
+  const of=document.getElementById("overflag");
+  if(over.length){ of.classList.add("show"); of.textContent="⚠ Перерасход: "+over.map(v=>v.vial+" (+"+v.availVol*-1+" ю)").join(", "); }
+  else of.classList.remove("show");
+
+  // stats per user
+  const st=document.getElementById("stats");
+  const us=users();
+  if(us.length===0){ st.innerHTML='<div class="empty">Инъекций пока нет.</div>'; }
+  else{
+    let h="";
+    us.forEach(u=>{
+      const rows=JOURNAL.filter(r=>r.op===u).slice().sort((a,b)=>key(a.date)-key(b.date));
+      h+=`<div class="userblock"><div class="name">${u}</div>`+
+         '<table><thead><tr><th>Дата</th><th>Виала</th><th class="num">Пептид, мг</th></tr></thead><tbody>';
+      rows.forEach(r=>{ h+=`<tr><td class="num" style="text-align:left">${r.date}</td><td class="vial">${r.vial}</td><td class="num">${fmt(r.pep)}</td></tr>`; });
+      h+='</tbody></table></div>';
+    });
+    st.innerHTML=h;
+  }
+
+  // journal
+  const jr=document.getElementById("journal");
+  let jh='<table><thead><tr><th>Дата</th><th>Виала</th><th>Операция</th><th class="num">Объём, ю</th><th class="num">Пептид, мг</th><th></th></tr></thead><tbody>';
+  const sorted=JOURNAL.map((r,i)=>({r,i})).sort((a,b)=> key(a.r.date)-key(b.r.date) || a.i-b.i);
+  sorted.forEach(({r,i})=>{
+    if(EDITING===i){
+      jh+=`<tr>`+
+        `<td><input class="cell" id="e_date" value="${r.date}"></td>`+
+        `<td><input class="cell" id="e_vial" value="${r.vial}"></td>`+
+        `<td><input class="cell" id="e_op" value="${r.op}"></td>`+
+        `<td><input class="cell n" id="e_vol" value="${r.vol}"></td>`+
+        `<td><input class="cell n" id="e_pep" value="${fmt(r.pep)}"></td>`+
+        `<td><div class="rowbtns"><button class="mini primary" data-save="${i}" title="Сохранить">✓</button>`+
+        `<button class="mini" data-cancel="1" title="Отмена">×</button></div></td></tr>`;
+    } else {
+      const cls = r.op==="Новая"?"op-new":(r.op==="Мусор"?"op-trash":"");
+      jh+=`<tr><td class="num" style="text-align:left">${r.date}</td><td class="vial">${r.vial}</td>`+
+          `<td class="${cls}">${r.op}</td><td class="num">${r.vol}</td><td class="num">${fmt(r.pep)}</td>`+
+          `<td><div class="rowbtns"><button class="edit" data-edit="${i}" title="Редактировать">✎</button>`+
+          `<button class="del" data-i="${i}" title="Удалить">×</button></div></td></tr>`;
+    }
+  });
+  jr.innerHTML=jh+'</tbody></table>';
+  jr.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{ EDITING=parseInt(b.dataset.edit); render(); });
+  jr.querySelectorAll("[data-cancel]").forEach(b=>b.onclick=()=>{ EDITING=null; render(); });
+  jr.querySelectorAll("[data-save]").forEach(b=>b.onclick=async()=>{
+    const i=parseInt(b.dataset.save);
+    const nd=document.getElementById("e_date").value.trim();
+    const nv=document.getElementById("e_vial").value.trim();
+    const no=document.getElementById("e_op").value.trim();
+    const nvol=Math.round(num(document.getElementById("e_vol").value));
+    const npep=num(document.getElementById("e_pep").value);
+    if(!nd||!nv||!no||isNaN(nvol)||npep==null){ alert("Заполни все поля (дата, виала, операция, объём, пептид)."); return; }
+    JOURNAL[i]={date:nd,vial:nv,op:no,vol:nvol,pep:npep};
+    EDITING=null; await save(); render();
+  });
+  jr.querySelectorAll(".del").forEach(b=>b.onclick=async()=>{
+    if(!confirm("Удалить эту запись?")) return;
+    EDITING=null; JOURNAL.splice(parseInt(b.dataset.i),1); await save(); render();
+  });
+}
+
+/* ---------- events ---------- */
+function showMsg(res){
+  const m=document.getElementById("msg");
+  m.className="msg show "+(res.err?"err":"ok");
+  m.innerHTML = res.err ? res.err : `${res.ok}<div class="row"><span>${res.row.replace(/\t/g,"  ")}</span><button data-copy="${encodeURIComponent(res.row)}">копировать</button></div>`;
+  const cb=m.querySelector("[data-copy]");
+  if(cb) cb.onclick=()=>{ copyText(decodeURIComponent(cb.dataset.copy)); cb.textContent="✓"; };
+}
+async function add(){
+  const cmd=document.getElementById("cmd").value;
+  const date=document.getElementById("date").value||todayInput();
+  const res=handle(cmd,date);
+  if(res.err){ showMsg(res); return; }
+  await save(); showMsg(res); render();
+  document.getElementById("cmd").value="";
+  document.getElementById("cmd").focus();
+}
+document.getElementById("add").onclick=add;
+document.getElementById("cmd").addEventListener("keydown",e=>{ if(e.key==="Enter") add(); });
+
+function copyText(text){
+  let ok=false;
+  try{
+    const ta=document.createElement("textarea");
+    ta.value=text; ta.style.position="fixed"; ta.style.top="-1000px";
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    ok=document.execCommand("copy");
+    document.body.removeChild(ta);
+  }catch(e){ ok=false; }
+  try{ if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(text).catch(()=>{}); }catch(e){}
+  return ok;
+}
+document.getElementById("copy").onclick=()=>{
+  const sorted=JOURNAL.slice().sort((a,b)=>key(a.date)-key(b.date));
+  const tsv=sorted.map(rowStr).join("\n");
+  const out=document.getElementById("tsvout"), hint=document.getElementById("tsvhint");
+  out.value=tsv; out.style.display="block"; out.focus(); out.select();
+  const ok=copyText(tsv);
+  hint.style.display="block";
+  hint.textContent = ok
+    ? "Скопировано в буфер. Ниже — на случай, если нужно вставить вручную (выдели → копировать)."
+    : "Автокопирование недоступно (локальный файл). Выдели текст ниже и скопируй вручную.";
+  const b=document.getElementById("copy");
+  b.textContent = ok ? "Скопировано ✓" : "Показано ниже ↓";
+  setTimeout(()=>b.textContent="Копировать журнал (TSV)",2000);
+};
+document.getElementById("reset").onclick=async()=>{
+  if(!confirm("Удалить все данные приложения? Действие необратимо.")) return;
+  JOURNAL=JSON.parse(JSON.stringify(SEED)); await save(); render();
+};
+document.getElementById("export").onclick=()=>{
+  const data=JSON.stringify(JOURNAL,null,2);
+  const blob=new Blob([data],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download="peptide-tracker-"+new Date().toISOString().slice(0,10)+".json";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+document.getElementById("import").onclick=()=>document.getElementById("importfile").click();
+document.getElementById("importfile").onchange=(e)=>{
+  const f=e.target.files[0]; if(!f){ return; }
+  const r=new FileReader();
+  r.onload=async()=>{
+    try{
+      let data=JSON.parse(r.result);
+      if(!Array.isArray(data)) throw new Error("формат");
+      data=data.filter(x=>x&&x.date&&x.vial&&x.op)
+               .map(x=>({date:String(x.date),vial:String(x.vial),op:String(x.op),vol:Number(x.vol)||0,pep:Number(x.pep)||0}));
+      if(!data.length) throw new Error("пусто");
+      if(!confirm("Заменить текущие данные импортом ("+data.length+" записей)?")){ e.target.value=""; return; }
+      JOURNAL=data; EDITING=null; await save(); render();
+    }catch(err){ alert("Не удалось прочитать файл — нужен JSON-бэкап этого приложения."); }
+    e.target.value="";
+  };
+  r.readAsText(f);
+};
+
+/* ---------- init ---------- */
+(async()=>{
+  document.getElementById("date").value=todayInput();
+  const stored=await load();
+  if(stored && Array.isArray(stored) && stored.length){ JOURNAL=stored; }
+  else { JOURNAL=JSON.parse(JSON.stringify(SEED)); await save(); }
+  render();
+})();
+</script>
