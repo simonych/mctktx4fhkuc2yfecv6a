@@ -51,7 +51,16 @@
   .doses{list-style:none;padding:0;margin:8px 0 0;font-family:var(--mono);font-size:13px}
   .doses li{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line2)}
   .doses li:last-child{border-bottom:none}
-  @media(max-width:520px){ body{padding:12px} .big{font-size:28px} }
+  @media(max-width:520px){
+    body{padding:12px;font-size:16px}
+    .big{font-size:28px}
+    .field{min-width:100%;flex:1 1 100%}
+    input[type=text]{font-size:16px;padding:12px 14px}
+    button{font-size:15px;padding:13px 18px;min-height:44px;width:100%}
+    .cmd button{width:auto}
+    th,td{padding:9px 8px}
+    table{font-size:15px}
+  }
 </style>
 
 <div class="wrap">
