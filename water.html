@@ -99,7 +99,7 @@
   <div class="card result" id="opts">
     <h2>Варианты</h2>
     <div id="optsTable"></div>
-    <div class="note">Вода ограничена ёмкостью флакона — 300 ю (3 мл). Концентрация в подсказках не показывается (нужна только для расчёта).</div>
+    <div class="note">Вода ограничена ёмкостью флакона — 500 ю (5 мл). Концентрация в подсказках не показывается (нужна только для расчёта).</div>
   </div>
 </div>
 
@@ -116,12 +116,12 @@ function calc(T, doses){
   const dmax=Math.max.apply(null,doses);
   const mult10=v=>Math.abs(v/10-Math.round(v/10))<1e-6;
   const cands=[];
-  for(let vmax=10; vmax*T/dmax<=300+1e-9; vmax+=10){
+  for(let vmax=10; vmax*T/dmax<=500+1e-9; vmax+=10){
     const V=vmax*T/dmax;
     const vols=doses.map(d=>d*vmax/dmax);
     if(vols.every(mult10)) cands.push({vmax,V,vols:vols.map(v=>Math.round(v))});
   }
-  if(cands.length===0) return {error:"Нет варианта с кратностью 10 ю в пределах флакона (≤300 ю). Попробуй округлить дозы."};
+  if(cands.length===0) return {error:"Нет варианта с кратностью 10 ю в пределах флакона (≤500 ю). Попробуй округлить дозы."};
   let rec=cands.find(c=>c.vmax>=40) || cands[cands.length-1];
   return {cands,rec,doses,T};
 }
