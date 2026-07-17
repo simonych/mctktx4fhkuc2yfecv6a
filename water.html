@@ -57,7 +57,6 @@
     .field{min-width:100%;flex:1 1 100%}
     input[type=text]{font-size:16px;padding:12px 14px}
     button{font-size:15px;padding:13px 18px;min-height:44px;width:100%}
-    .cmd button{width:auto}
     th,td{padding:9px 8px}
     table{font-size:15px}
   }
@@ -81,8 +80,8 @@
         <input type="text" id="mg" placeholder="15" inputmode="decimal" autocomplete="off">
       </div>
       <div class="field">
-        <label>Дозы, мг (через запятую)</label>
-        <input type="text" id="doses" placeholder="2,5  5" autocomplete="off">
+        <label>Дозы, мг (через запятую, десятичная — точка)</label>
+        <input type="text" id="doses" placeholder="2.5, 5" autocomplete="off">
       </div>
     </div>
     <button id="go">Рассчитать</button>
@@ -137,7 +136,7 @@ function copyText(text){
 function run(){
   const err=document.getElementById("err");
   const T=num(document.getElementById("mg").value);
-  const doses=document.getElementById("doses").value.split(/[,;\s]+/).map(num).filter(x=>x!=null);
+  const doses=document.getElementById("doses").value.split(/[,;\s]+/).map(s=>parseFloat(String(s).trim())).filter(x=>isFinite(x)&&x>0);
   const pep=document.getElementById("pep").value.trim();
   const r=calc(T,doses);
   if(r.error){ err.textContent=r.error; err.classList.add("show");
